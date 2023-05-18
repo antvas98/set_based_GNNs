@@ -53,3 +53,4 @@ build/
 .idea_modules/
 
 test_folder/
+master/*.ipynb
