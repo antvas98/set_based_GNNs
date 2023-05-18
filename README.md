@@ -14,7 +14,7 @@ This repository contains a collection of scripts for transforming datasets and p
 
 5. `cross_validation_metric.py`: This file implements cross-validation for a given number of folds (default is 10). It performs the hyperparameter selection process from step 4 within each fold to evaluate the model's performance in 10 different test sets.
 
-6. `example_run.py`: A short example that automatically split train and test a $\delta$-$2$-WL$\{!\{\}!\}$ a given (transformed) dataset for
+6. `example_run.py`: A short example that automatically split train and test a $\delta$-$2$-WL$\{\{\}\}$ a given (transformed) dataset for
 
 ## Getting Started
 
