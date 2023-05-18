@@ -1,2 +1,55 @@
-folder/
-master/_.ipynb
+# Compiled Python files
+*.pyc
+*.pyo
+*.pyd
+
+# Python cache directories
+__pycache__/
+
+# Virtual environment
+venv/
+env/
+
+# IDE files and directories
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Editor-specific temporary files
+*~
+
+# macOS files
+.DS_Store
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs and generated data
+logs/
+*.log
+*.csv
+
+# Dependency directories
+node_modules/
+bower_components/
+
+# Compiled files
+*.exe
+*.dll
+*.so
+*.dylib
+*.jar
+
+# Package files
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Miscellaneous
+.sass-cache/
+.cache/
+.idea_modules/
+
+test_folder/
