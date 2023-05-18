@@ -21,5 +21,3 @@ This repository contains a collection of scripts for transforming datasets and p
 To use these scripts, follow these steps:
 
 1. Install the required dependencies mentioned in the `requirements.txt` file.
-
-2. Run the scripts using Python. You can provide the necessary arguments as described in the script files or modify the code to fit your specific requirements.
