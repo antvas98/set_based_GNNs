@@ -14,3 +14,12 @@ This repository contains a collection of scripts for transforming datasets and p
 
 5. `cross_validation_metric.py`: This file implements cross-validation for a given number of folds (default is 10). It performs the hyperparameter selection process from step 4 within each fold to evaluate the model's performance in 10 different test sets.
 
+6. `example_run.py`: A short example that automatically split train and test a $\alpha$ a given (transformed) dataset for
+
+## Getting Started
+
+To use these scripts, follow these steps:
+
+1. Install the required dependencies mentioned in the `requirements.txt` file.
+
+2. Run the scripts using Python. You can provide the necessary arguments as described in the script files or modify the code to fit your specific requirements.
