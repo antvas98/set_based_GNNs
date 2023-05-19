@@ -28,6 +28,8 @@ def set_2_3_local_nonlocal_transformer(dataset, k, variant='local'):
   mapping_dict = {}
   
   for data in tqdm(dataset):
+    if data.x.shape[0]<=k:
+      continue
     data.edge_attr = None
     graph = nx.Graph(directed=False)
     # Add nodes with their attributes
@@ -141,6 +143,8 @@ def set_2_3_delta_transformer(dataset,k):
   mapping_dict = {}
 
   for data in tqdm(dataset):
+    if data.x.shape[0]<=k:
+      continue
 
     data.edge_attr = None
     graph = nx.Graph(directed=False)
