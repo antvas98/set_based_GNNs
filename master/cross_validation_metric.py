@@ -16,4 +16,4 @@ def cross_validation(transformed_data,
         train_folds = [transformed_data[i] for i in train_idx]
         test_fold = [transformed_data[i] for i in test_idx]
         performance.append(hyperparameter_selection_within_fold(train_folds, test_fold, batch_size=64, combinations=combinations, num_aggregators=num_aggregators))
-    return np.mean(np.array(performance)), performance
+    return np.mean(np.array(performance)), np.std(np.array(performance)) 
