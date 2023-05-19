@@ -1,4 +1,4 @@
-from GNN_architectures import two_aggregators_Net
+from GNN_architectures import GINconv_two_aggregators_Net
 from sklearn.model_selection import train_test_split
 from torch_geometric.loader import DataLoader
 import torch.nn.functional as F
@@ -55,7 +55,7 @@ def STT(location,
             total_correct += int((pred == data.y).sum())
         return total_correct/len(loader.dataset)
 
-    model = two_aggregators_Net(input_channels = input_channels, hidden_units = hidden_units).to(device)
+    model = GINconv_two_aggregators_Net(input_channels = input_channels, hidden_units = hidden_units).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     best_acc_val = 0

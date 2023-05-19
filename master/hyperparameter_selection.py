@@ -4,15 +4,15 @@ from torch_geometric.loader import DataLoader
 import torch.nn.functional as F
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
-from GNN_architectures import one_aggregator_Net, two_aggregators_Net, tuple_Net
+from GNN_architectures import GCNconv_one_aggregator_Net, GCNconv_two_aggregators_Net, tuple_Net, GINconv_one_aggregator_Net, GINconv_two_aggregators_Net
 
 def hyperparameter_selection_within_fold(data_train,
         data_test,
-        combinations, 
+        combinations={'hidden_units':[16,32,64],'lr':[0.001], 'weight_decay':[0.00007]}, 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
         batch_size=64,
         epochs = 50,
-        num_aggregators=1):
+        aggregators='gcn 1'):
   # DataLoader for transformed dataset
   input_channels = data_train[0].x.shape[1]
   combinations_list = list(itertools.product(*combinations.values()))
@@ -61,10 +61,14 @@ def hyperparameter_selection_within_fold(data_train,
     current_combination = dict(zip(combinations.keys(), combination))
     # print(current_combination)
 
-    if num_aggregators==1:
-      model = one_aggregator_Net(input_channels = input_channels, hidden_units = current_combination['hidden_units']).to(device)
-    if num_aggregators==2:
-      model = two_aggregators_Net(input_channels = input_channels, hidden_units = current_combination['hidden_units']).to(device)
+    if aggregators=='gcn 1':
+      model = GCNconv_one_aggregator_Net(input_channels = input_channels, hidden_units = current_combination['hidden_units']).to(device)
+    if aggregators=='gcn 2':
+      model = GCNconv_two_aggregators_Net(input_channels = input_channels, hidden_units = current_combination['hidden_units']).to(device)
+    if aggregators=="gin 1":
+      model = GINconv_one_aggregator_Net(input_channels = input_channels, hidden_units = current_combination['hidden_units']).to(device)
+    if aggregators=='gin 2':
+       model = GINconv_two_aggregators_Net(input_channels = input_channels, hidden_units = current_combination['hidden_units']).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=current_combination['lr'], weight_decay=current_combination['weight_decay'])
 
@@ -79,10 +83,14 @@ def hyperparameter_selection_within_fold(data_train,
           best_combination = current_combination
           
   #Apply the best configuration on the test set
-  if num_aggregators==1:
-    model = one_aggregator_Net(input_channels = input_channels, hidden_units = best_combination['hidden_units']).to(device)
-  if num_aggregators==2:
-    model = two_aggregators_Net(input_channels = input_channels, hidden_units = best_combination['hidden_units']).to(device)
+  if aggregators=='gcn 1':
+    model = GCNconv_one_aggregator_Net(input_channels = input_channels, hidden_units = best_combination['hidden_units']).to(device)
+  if aggregators=='gcn 2':
+    model = GCNconv_two_aggregators_Net(input_channels = input_channels, hidden_units = best_combination['hidden_units']).to(device)
+  if aggregators=="gin 1":
+    model = GINconv_one_aggregator_Net(input_channels = input_channels, hidden_units = current_combination['hidden_units']).to(device)
+  if aggregators=='gin 2':
+      model = GINconv_two_aggregators_Net(input_channels = input_channels, hidden_units = current_combination['hidden_units']).to(device)
 
   optimizer = torch.optim.Adam(model.parameters(), lr=best_combination['lr'], weight_decay=best_combination['weight_decay'])
   best = 0
