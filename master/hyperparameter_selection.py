@@ -4,7 +4,7 @@ from torch_geometric.loader import DataLoader
 import torch.nn.functional as F
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
-from GNN_architectures import GCNconv_one_aggregator_Net, GCNconv_two_aggregators_Net, tuple_Net, GINconv_one_aggregator_Net, GINconv_two_aggregators_Net
+from GNN_architectures import GCNconv_one_aggregator_Net, GCNconv_two_aggregators_Net, GINconv_one_aggregator_Net, GINconv_two_aggregators_Net, tuple_Net
 
 def hyperparameter_selection_within_fold(data_train,
         data_test,
