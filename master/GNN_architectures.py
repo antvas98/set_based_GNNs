@@ -123,9 +123,9 @@ class GINconv_two_aggregators_Net(torch.nn.Module):
     return x 
 
 class tuple_Net(torch.nn.Module):
-    def __init__(self, input_channels,k=3, hidden_units = 32):
+    def __init__(self, input_channels, k=2, hidden_units = 32):
         super(tuple_Net, self).__init__()
-        input_dim = input_channels # this corresponds to the k = 3
+        input_dim = input_channels 
         dim = hidden_units
         self.k = k
         self.convs1 = torch.nn.ModuleList([GCNConv(input_dim, dim) for _ in range(self.k)])

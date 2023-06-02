@@ -69,6 +69,10 @@ def hyperparameter_selection_within_fold(data_train,
       model = GINconv_one_aggregator_Net(input_channels = input_channels, hidden_units = current_combination['hidden_units']).to(device)
     if aggregators=='gin 2':
        model = GINconv_two_aggregators_Net(input_channels = input_channels, hidden_units = current_combination['hidden_units']).to(device)
+    if aggregators=='gcn tuple2':
+      model = tuple_Net(input_channels = input_channels, k=2, hidden_units = current_combination['hidden_units']).to(device)
+    if aggregators=='gcn tuple3':
+      model = tuple_Net(input_channels = input_channels, k=3, hidden_units = current_combination['hidden_units']).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=current_combination['lr'], weight_decay=current_combination['weight_decay'])
 
@@ -91,6 +95,10 @@ def hyperparameter_selection_within_fold(data_train,
     model = GINconv_one_aggregator_Net(input_channels = input_channels, hidden_units = current_combination['hidden_units']).to(device)
   if aggregators=='gin 2':
       model = GINconv_two_aggregators_Net(input_channels = input_channels, hidden_units = current_combination['hidden_units']).to(device)
+  if aggregators=='gcn tuple2':
+      model = tuple_Net(input_channels = input_channels, k=2, hidden_units = current_combination['hidden_units']).to(device)
+  if aggregators=='gcn tuple3':
+      model = tuple_Net(input_channels = input_channels, k=3, hidden_units = current_combination['hidden_units']).to(device)
 
   optimizer = torch.optim.Adam(model.parameters(), lr=best_combination['lr'], weight_decay=best_combination['weight_decay'])
   best = 0
