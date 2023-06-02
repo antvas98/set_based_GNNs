@@ -692,48 +692,48 @@ def tuple_2_local_transformer(dataset):
             [node_feature0, node_feature1, np.array([0,0])], axis=-1) # 0 indicates no repeatition of coordinates and 0 indicates there is not an edge between coordinates
           tuple_graph.add_node(ind,vector=node_attr)
 
+    neighbors_0 = [] # for the pytorch geometric type data
     neighbors_1 = [] # for the pytorch geometric type data
-    neighbors_2 = [] # for the pytorch geometric type data
 
     # Convert node attributes to numpy arrays
     node_attrs = nx.get_node_attributes(tuple_graph, 'vector')
     node_features = np.array(list(node_attrs.values()))
     node_features = node_features.reshape((len(node_features), -1))
 
+    index_0 = [] # for the pytorch geometric type data
     index_1 = [] # for the pytorch geometric type data
-    index_2 = [] # for the pytorch geometric type data
 
     for node in tuple_graph.nodes:
         # Get underlying nodes.
         v, w = nodes_to_tuple[node]
 
-        index_1.append(int(v))
-        index_2.append(int(w))
+        index_0.append(int(v))
+        index_1.append(int(w))
 
         # 1 neighbors.
         for neighbor in graph.neighbors(v): # We consider only 1-local neighbors
           s = tuple_to_nodes[(neighbor, w)]
-          neighbors_1.append([int(node), int(s)])
+          neighbors_0.append([int(node), int(s)])
           # tuple_graph.add_edge(int(node),int(s),label='1-Local') #not necessary
 
         # 2 neighbors.
         for neighbor in graph.neighbors(w):
           s = tuple_to_nodes[(v, neighbor)]
-          neighbors_2.append([int(node), int(s)])
+          neighbors_1.append([int(node), int(s)])
           # tuple_graph.add_edge(int(node),int(s),label='2-Local') # not necessary
 
     # Convert back to pytorch geometric data format
     data_new = Data()
 
+    edge_index_0 = torch.tensor(neighbors_0).t().contiguous()
     edge_index_1 = torch.tensor(neighbors_1).t().contiguous()
-    edge_index_2 = torch.tensor(neighbors_2).t().contiguous()
 
+    data_new.edge_index_0 = edge_index_0
     data_new.edge_index_1 = edge_index_1
-    data_new.edge_index_2 = edge_index_2
 
     data_new.x = torch.from_numpy(np.array(node_features)).to(torch.float)
+    data_new.index_0 = torch.from_numpy(np.array(index_0)).to(torch.int64) #where are they used?
     data_new.index_1 = torch.from_numpy(np.array(index_1)).to(torch.int64) #where are they used?
-    data_new.index_2 = torch.from_numpy(np.array(index_2)).to(torch.int64) #where are they used?
 
     data_new.y = data.y
 
