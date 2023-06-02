@@ -122,9 +122,9 @@ class GINconv_two_aggregators_Net(torch.nn.Module):
     x = x.squeeze(dim=-1)
     return x 
 
-class tuple_Net(torch.nn.Module):
+class gcn_tuple_Net(torch.nn.Module):
     def __init__(self, input_channels, k=2, hidden_units = 32):
-        super(tuple_Net, self).__init__()
+        super(gcn_tuple_Net, self).__init__()
         input_dim = input_channels 
         dim = hidden_units
         self.k = k
@@ -156,3 +156,37 @@ class tuple_Net(torch.nn.Module):
       x = x.squeeze(dim=-1)
 
       return x
+
+class gin_tuple2_Net(torch.nn.Module):
+  def __init__(self, input_channels, k=2, hidden_units = 32):
+      super(gin_tuple2_Net, self).__init__()
+      dim = hidden_units
+      self.conv_1_1 = GINConv(nn=MLP([input_channels, hidden_units, hidden_units]), train_eps=False) #GCNConv(input_channels, dim)
+      self.conv_1_2 = GINConv(nn=MLP([input_channels, hidden_units, hidden_units]), train_eps=False) #GCNConv(input_channels, dim)
+
+      self.mlp_1 = Sequential(Linear(2 * dim, dim), ReLU(), Linear(dim, dim))
+
+      self.conv_2_1 = GINConv(nn=MLP([hidden_units, hidden_units, hidden_units]), train_eps=False) #GCNConv(dim, dim)
+      self.conv_2_2 = GINConv(nn=MLP([hidden_units, hidden_units, hidden_units]), train_eps=False) #GCNConv(dim, dim)
+
+      self.mlp_2 = Sequential(Linear(2 * dim, dim), ReLU(), Linear(dim, dim))
+
+      self.lin = Linear(dim, 1)
+
+  def forward(self,data):
+    x, edge_index_0, edge_index_1, batch = data.x, data.edge_index_0, data.edge_index_1, data.batch
+
+
+    x_0 = self.conv_1_1(x, edge_index_0)
+    x_1 = self.conv_1_2(x, edge_index_1)
+    x = self.mlp_1(torch.cat([x_0, x_1], dim=-1))
+
+    x_0 = F.relu(self.conv_2_1(x, edge_index_0))
+    x_1 = F.relu(self.conv_2_2(x, edge_index_1))
+    x = self.mlp_2(torch.cat([x_0, x_1], dim=-1))
+
+    x = global_add_pool(x, batch)
+    
+    x = self.lin(x)
+    x = x.squeeze(dim=-1)
+    return x     
