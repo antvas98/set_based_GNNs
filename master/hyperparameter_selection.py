@@ -4,7 +4,7 @@ from torch_geometric.loader import DataLoader
 import torch.nn.functional as F
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
-from GNN_architectures import GCNconv_one_aggregator_Net, GCNconv_two_aggregators_Net, GINconv_one_aggregator_Net, GINconv_two_aggregators_Net, gcn_tuple_Net, gin_tuple2_Net
+from GNN_architectures import GCNconv_one_aggregator_Net, GCNconv_two_aggregators_Net, GINconv_one_aggregator_Net, GINconv_two_aggregators_Net, gcn_tuple_Net, gin_tuple2_Net, gin_tuple3_Net
 def hyperparameter_selection_within_fold(data_train,
         data_test,
         combinations={'hidden_units':[16,32,64],'lr':[0.001], 'weight_decay':[0.00007]}, 
@@ -74,6 +74,8 @@ def hyperparameter_selection_within_fold(data_train,
       model = gcn_tuple_Net(input_channels = input_channels, k=3, hidden_units = current_combination['hidden_units']).to(device)
     if aggregators=='gin tuple2':
       model = gin_tuple2_Net(input_channels = input_channels, k=2, hidden_units = current_combination['hidden_units']).to(device)
+    if aggregators=='gin tuple3':
+      model = gin_tuple3_Net(input_channels = input_channels, k=3, hidden_units = current_combination['hidden_units']).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=current_combination['lr'], weight_decay=current_combination['weight_decay'])
 
@@ -102,6 +104,8 @@ def hyperparameter_selection_within_fold(data_train,
       model = gcn_tuple_Net(input_channels = input_channels, k=3, hidden_units = current_combination['hidden_units']).to(device)
   if aggregators=='gin tuple2':
       model = gin_tuple2_Net(input_channels = input_channels, k=2, hidden_units = current_combination['hidden_units']).to(device)
+  if aggregators=='gin tuple3':
+      model = gin_tuple3_Net(input_channels = input_channels, k=3, hidden_units = current_combination['hidden_units']).to(device)
 
   optimizer = torch.optim.Adam(model.parameters(), lr=best_combination['lr'], weight_decay=best_combination['weight_decay'])
   best = 0
