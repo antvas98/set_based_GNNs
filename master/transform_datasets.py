@@ -6,8 +6,15 @@ import networkx as nx
 import itertools
 from tqdm import tqdm
 
-# Create the graph
-def set_2_3_local_nonlocal_transformer(dataset, k, variant='local'):
+def set_2_3_local_nonlocal_transformer(dataset, k, variant='local',star_variant = False):
+
+  data_list = []
+  N = dataset[0].x.shape[1]
+  
+  if star_variant:
+    N+=1
+  
+  mapping_dict = {}
 
   # function that takes as an argument a set and the graph and return the hash for the set as above
   def assign_attr(Set,graph):
@@ -21,21 +28,24 @@ def set_2_3_local_nonlocal_transformer(dataset, k, variant='local'):
     joined = '|'.join([''.join(map(str, sublst)) for sublst in my_list])
     return joined
 
-
-  N = dataset[0].x.shape[1]
-  s = time.time()
-  data_list = []
-  mapping_dict = {}
-  
   for data in tqdm(dataset):
     if data.x.shape[0]<=k:
       continue
     data.edge_attr = None
     graph = nx.Graph(directed=False)
-    # Add nodes with their attributes
-    for i in range(data.x.shape[0]):
-      node_attr = np.argmax(data.x[i,:].cpu().detach().numpy())
-      graph.add_node(i,vector=node_attr)
+
+    if star_variant:
+      for i in range(data.x.shape[0]):
+        node_attr = np.argmax(data.x[i,:].cpu().detach().numpy())
+        graph.add_node(i,vector=node_attr)
+      star_attr = max([graph.nodes[i]['vector'] for i in range(len(graph.nodes))])+1
+      graph.add_node(i+1, vector=star_attr)
+
+    if star_variant==False:
+      # Add nodes with their attributes
+      for i in range(data.x.shape[0]):
+        node_attr = np.argmax(data.x[i,:].cpu().detach().numpy())
+        graph.add_node(i,vector=node_attr)
 
     # Add edges (without their attributes)
     edge_index = data.edge_index.cpu().detach().numpy()
@@ -59,8 +69,6 @@ def set_2_3_local_nonlocal_transformer(dataset, k, variant='local'):
 
       set_graph.add_node(ind,attr=mapping_dict[node_attr])
       
-
-    
     neighbors = {key: [] for key in range(k)}
     all_neighbors = []
     index = []
@@ -121,7 +129,6 @@ def set_2_3_local_nonlocal_transformer(dataset, k, variant='local'):
 
   return data_list
 
-
 #Delta variant
 def set_2_3_delta_transformer(dataset,k):
 
@@ -175,8 +182,6 @@ def set_2_3_delta_transformer(dataset,k):
 
       set_graph.add_node(ind,attr=mapping_dict[node_attr])
       
-
-
     # neighbors = {key: [] for key in range(k)}
     # all_neighbors = []
     index = []
@@ -739,4 +744,253 @@ def tuple_2_local_transformer(dataset):
 
     data_list.append(data_new)
 
+  return data_list
+
+# for graphs with not initial node features (nif)
+def set_2_3_local_nonlocal_transformer_nif(dataset, k, variant='local',star_variant = False):
+
+  data_list = []  
+  mapping_dict = {}
+
+  np.random.seed(42)
+  fixed_node_attr = np.random.uniform(low=0.0, high=1.0, size=3)
+  np.random.seed(7)
+  fixed_node_attr_star = np.random.uniform(low=0.0, high=1.0, size=3)
+
+  def assign_attr(Set,graph):
+    subgraph = graph.subgraph(Set)
+    return len(subgraph.edges)
+  
+  for data in tqdm(dataset):
+    data.edge_attr = None
+    graph = nx.Graph(directed=False)
+
+    if star_variant:
+      for i in range(data.num_nodes):
+        node_attr = fixed_node_attr
+        graph.add_node(i,vector=node_attr)
+      graph.add_node(i+1, vector=fixed_node_attr_star)
+
+    if star_variant==False:
+      # Add nodes with their attributes
+      for i in range(data.num_nodes):
+        node_attr = np.argmax(data.x[i,:].cpu().detach().numpy())
+        graph.add_node(i,vector=node_attr)
+
+    # Add edges (without their attributes)
+    edge_index = data.edge_index.cpu().detach().numpy()
+    rows = list(edge_index[0])
+    cols = list(edge_index[1])
+    for ind, (i, j) in enumerate(zip(rows, cols)):
+      graph.add_edge(i, j)
+
+    set_graph = nx.Graph(directed=False)
+    set_to_nodes = {} 
+    nodes_to_set = {}
+    
+    for ind,Set in enumerate(list(itertools.combinations(graph.nodes, k))):
+      sorted_set = sorted(Set)
+      set_to_nodes[tuple(sorted_set)] = ind
+      nodes_to_set[ind] = tuple(sorted_set)
+      node_attr =  assign_attr(Set,graph)
+    
+      if node_attr not in mapping_dict.keys():
+        mapping_dict[node_attr] = len(mapping_dict) #np.array([len(mapping_dict)])
+
+      set_graph.add_node(ind,attr=mapping_dict[node_attr])
+      
+
+    
+    neighbors = {key: [] for key in range(k)}
+    all_neighbors = []
+    index = []
+
+    for node in set_graph.nodes:
+      # Get underlying nodes.
+      tup = tuple(sorted(nodes_to_set[node])) # maybe ordering not necessary
+
+      # check it again
+      for i in range(k):
+        index.append(tup[i])
+
+        if variant =='local':
+          # neighbors.
+          neighbors[i] = list(graph.neighbors(tup[i]))
+
+        if variant == 'nonlocal':
+          neighbors[i] = list(graph.nodes)
+
+        other_vertices = set(tup[:i]+tup[i+1:])
+        if len((other_vertices).intersection(set(neighbors[i]))) != 0:
+          neighbors[i] = [x for x in neighbors[i] if x not in list(other_vertices)]
+
+        for neighbor in neighbors[i]: 
+          tuple_neighbor = tup[:i]+tuple([neighbor])+tup[i+1:]
+          s = set_to_nodes[tuple(sorted(tuple_neighbor))]
+          all_neighbors.append([int(node), int(s)])
+          # set_graph.add_edge(int(node),int(s)) #not necessary
+            
+    # Convert back to pytorch geometric data format
+    data_new = Data()
+
+    edge_index = torch.tensor(all_neighbors).t().contiguous()
+
+    data_new.edge_index = edge_index
+
+    node_attrs = nx.get_node_attributes(set_graph, 'attr')
+    node_features = np.array(list(node_attrs.values()))
+    node_features = node_features.reshape((len(node_features), -1))
+    data_new.x = torch.from_numpy(np.array(node_features)).to(torch.float)
+
+    # Check it again
+    data_new.index = torch.from_numpy(np.array(index)).to(torch.int64) #where are they used? ---> for the scatter aggregation function
+
+    data_new.y = data.y
+
+    data_list.append(data_new)
+
+  n = len(mapping_dict)
+
+  # One hot encoding
+  for d in data_list:
+    vrtcs = d.x.shape[0]
+    new_x = np.zeros((vrtcs, n))
+    for i,j in enumerate(d.x):
+      new_x[i, int(j)] = 1
+    d.x = torch.tensor(new_x,dtype=torch.float32)
+
+  return data_list
+
+
+# for graphs with not initial node features (nif)
+def multiset_2_3_local_nonlocal_transformer_nif(dataset,k,variant='local',star_variant = False):
+  
+  data_list = [] 
+  mapping_dict = {}
+
+  np.random.seed(42)
+  fixed_node_attr = np.random.uniform(low=0.0, high=1.0, size=3)
+  np.random.seed(7)
+  fixed_node_attr_star = np.random.uniform(low=0.0, high=1.0, size=3)
+
+  # function that takes as an argument a multiset and the graph and return the hash for the isomorphism type
+  def assign_attr(Set,graph):
+    subgraph = graph.subgraph(Set)
+    return len(subgraph.edges)
+  
+  for data in tqdm(dataset):
+    data.edge_attr = None
+    graph = nx.Graph(directed=False)
+
+    if star_variant:
+      for i in range(data.num_nodes):
+        node_attr = fixed_node_attr#np.argmax(data.x[i,:].cpu().detach().numpy())
+        graph.add_node(i,vector=node_attr)
+      graph.add_node(i+1, vector=fixed_node_attr_star)
+
+    if star_variant==False:
+      # Add nodes with their attributes
+      for i in range(data.num_nodes):
+        node_attr = fixed_node_attr #np.argmax(data.x[i,:].cpu().detach().numpy())
+        graph.add_node(i,vector=node_attr)
+
+    # Add edges (without their attributes)
+    edge_index = data.edge_index.cpu().detach().numpy()
+    rows = list(edge_index[0])
+    cols = list(edge_index[1])
+    for ind, (i, j) in enumerate(zip(rows, cols)):
+      graph.add_edge(i, j)
+    # nx.get_node_attributes(graph,'vector')
+
+    # Add nodes to each set_graph
+    multiset_graph = nx.Graph(directed=False)
+    multiset_to_nodes = {} 
+    nodes_to_multiset = {}
+
+    for ind,multiset in enumerate(list(itertools.combinations_with_replacement(graph.nodes, k))):
+      sorted_multiset = sorted(multiset)
+      multiset_to_nodes[tuple(sorted_multiset)] = ind
+      nodes_to_multiset[ind] = tuple(sorted_multiset)
+      node_attr =  assign_attr(multiset,graph)
+
+      if node_attr not in mapping_dict.keys():
+        mapping_dict[node_attr] = len(mapping_dict) #np.array([len(mapping_dict)])
+
+      multiset_graph.add_node(ind,attr=mapping_dict[node_attr])
+
+    for ind,Set in enumerate(list(itertools.combinations(graph.nodes, k))):
+      sorted_set = sorted(Set)
+      multiset_to_nodes[tuple(sorted_set)] = ind
+      nodes_to_multiset[ind] = tuple(sorted_set)
+      node_attr =  assign_attr(Set,graph)
+
+      if node_attr not in mapping_dict.keys():
+        mapping_dict[node_attr] = len(mapping_dict) #np.array([len(mapping_dict)])
+
+      multiset_graph.add_node(ind,attr=mapping_dict[node_attr])
+
+    # Add edges to each set_graph
+
+    # neighbors = {key: [] for key in range(k)} we dont have k distict elements 
+
+    all_neighbors = []
+    index = []
+
+    for node in multiset_graph.nodes:
+      # Get underlying nodes.
+      tup = tuple(sorted(nodes_to_multiset[node])) # maybe ordering not necessary
+      num_distinct = len(set(tup))
+      neighbors = {key: [] for key in range(num_distinct)}
+      distinct_elements = tuple(sorted(list(set(tup))))
+
+      # check it again for node based tasks
+      for i in range(num_distinct):
+        index.append(distinct_elements[i])
+
+        # neighbors by replacing the i-th element from the tuple of all distinct elements
+        if variant == 'local':
+          neighbors[i] = list(graph.neighbors(distinct_elements[i]))
+        if variant == 'nonlocal':
+          neighbors[i] = list(graph.nodes)
+
+        mult_position = tup.index(distinct_elements[i]) # the position (one of them) where is the specific element in the multiset
+
+        for neighbor in neighbors[i]: 
+          # tuple_neighbor = tup[:mult_position]+tuple([neighbor])+tup[mult_position+1:]
+          list_item = list(tup)
+          list_item[mult_position] = neighbor
+          tuple_neighbor = tuple(list_item)
+          s = multiset_to_nodes[tuple(sorted(tuple_neighbor))]
+          all_neighbors.append([int(node), int(s)])
+          # set_graph.add_edge(int(node),int(s)) #not necessary
+            
+    # Convert back to pytorch geometric data format
+    data_new = Data()
+
+    edge_index = torch.tensor(all_neighbors).t().contiguous()
+
+    data_new.edge_index = edge_index
+
+    node_attrs = nx.get_node_attributes(multiset_graph, 'attr')
+    node_features = np.array(list(node_attrs.values()))
+    node_features = node_features.reshape((len(node_features), -1))
+    data_new.x = torch.from_numpy(np.array(node_features)).to(torch.float)
+
+    # Check it again
+    data_new.index = torch.from_numpy(np.array(index)).to(torch.int64) #where are they used? ---> for the scatter aggregation function
+
+    data_new.y = data.y
+
+    data_list.append(data_new)
+
+  n = len(mapping_dict)
+
+  # One hot encoding
+  for d in data_list:
+    vrtcs = d.x.shape[0]
+    new_x = np.zeros((vrtcs, n))
+    for i,j in enumerate(d.x):
+      new_x[i, int(j)] = 1
+    d.x = torch.tensor(new_x,dtype=torch.float32)
+  
   return data_list
