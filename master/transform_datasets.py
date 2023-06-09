@@ -746,7 +746,7 @@ def tuple_2_local_transformer(dataset):
 
   return data_list
 
-# for graphs with not initial node features (nif)
+# for graphs without initial node features (nif)
 def set_2_3_local_nonlocal_transformer_nif(dataset, k, variant='local',star_variant = False):
 
   data_list = []  
@@ -862,7 +862,7 @@ def set_2_3_local_nonlocal_transformer_nif(dataset, k, variant='local',star_vari
   return data_list
 
 
-# for graphs with not initial node features (nif)
+# for graphs without initial node features (nif)
 def multiset_2_3_local_nonlocal_transformer_nif(dataset,k,variant='local',star_variant = False):
   
   data_list = [] 
@@ -995,7 +995,7 @@ def multiset_2_3_local_nonlocal_transformer_nif(dataset,k,variant='local',star_v
   
   return data_list
 
-# for graphs with not initial node features (nif)
+# for graphs without initial node features (nif)
 def set_2_3_delta_transformer_nif(dataset,k):
 
   # function that takes as an argument a set and the graph and return the hash for the set as above
@@ -1120,7 +1120,7 @@ def set_2_3_delta_transformer_nif(dataset,k):
   return data_list
 
 #for graphs without initial node features (nif)
-def multiset_2_3_local_transformer(dataset,k,variant='local',star_variant = False):
+def multiset_2_3_delta_transformer_nif(dataset,k):
   data_list = [] 
   mapping_dict = {}
 
@@ -1136,18 +1136,10 @@ def multiset_2_3_local_transformer(dataset,k,variant='local',star_variant = Fals
     data.edge_attr = None
     graph = nx.Graph(directed=False)
 
-    if star_variant:
-      for i in range(data.num_nodes):
-        node_attr = fixed_node_attr#np.argmax(data.x[i,:].cpu().detach().numpy())
-        graph.add_node(i,vector=node_attr)
-      star_attr = max([graph.nodes[i]['vector'] for i in range(len(graph.nodes))])+1
-      graph.add_node(i+1, vector=star_attr)
-
-    if star_variant==False:
-      # Add nodes with their attributes
-      for i in range(data.num_nodes):
-        node_attr = fixed_node_attr #np.argmax(data.x[i,:].cpu().detach().numpy())
-        graph.add_node(i,vector=node_attr)
+    # Add nodes with their attributes
+    for i in range(data.num_nodes):
+      node_attr = fixed_node_attr #np.argmax(data.x[i,:].cpu().detach().numpy())
+      graph.add_node(i,vector=node_attr)
 
     # Add edges (without their attributes)
     edge_index = data.edge_index.cpu().detach().numpy()
@@ -1188,43 +1180,53 @@ def multiset_2_3_local_transformer(dataset,k,variant='local',star_variant = Fals
 
     # neighbors = {key: [] for key in range(k)} we dont have k distict elements 
 
-    all_neighbors = []
+    all_neighbors_local = []
+    all_neighbors_global = []
     index = []
 
     for node in multiset_graph.nodes:
       # Get underlying nodes.
       tup = tuple(sorted(nodes_to_multiset[node])) # maybe ordering not necessary
       num_distinct = len(set(tup))
-      neighbors = {key: [] for key in range(num_distinct)}
+      neighbors_local = {key: [] for key in range(num_distinct)}
+      neighbors_global = {key: [] for key in range(num_distinct)}
       distinct_elements = tuple(sorted(list(set(tup))))
 
       # check it again for node based tasks
       for i in range(num_distinct):
         index.append(distinct_elements[i])
 
-        # neighbors by replacing the i-th element from the tuple of all distinct elements
-        if variant == 'local':
-          neighbors[i] = list(graph.neighbors(distinct_elements[i]))
-        if variant == 'nonlocal':
-          neighbors[i] = list(graph.nodes)
+        neighbors_local[i] = list(graph.neighbors(distinct_elements[i]))
+        neighbors_global[i] = list(set(graph.nodes)-set(graph.neighbors(distinct_elements[i])))
+        mult_position = tup.index(distinct_elements[i]) # the position (one of them) where is the element in the multiset (if in many positions returns the first)
 
-        mult_position = tup.index(distinct_elements[i]) # the position (one of them) where is the specific element in the multiset
-
-        for neighbor in neighbors[i]: 
-          # tuple_neighbor = tup[:mult_position]+tuple([neighbor])+tup[mult_position+1:]
+        for local_neighbor in neighbors_local[i]: 
+          # local_tuple_neighbor = tup[:mult_position]+tuple([local_neighbor])+tup[mult_position+1:]
           list_item = list(tup)
-          list_item[mult_position] = neighbor
-          tuple_neighbor = tuple(list_item)
-          s = multiset_to_nodes[tuple(sorted(tuple_neighbor))]
-          all_neighbors.append([int(node), int(s)])
-          # set_graph.add_edge(int(node),int(s)) #not necessary
+          list_item[mult_position] = local_neighbor
+          local_tuple_neighbor = tuple(list_item)
+          s = multiset_to_nodes[tuple(sorted(local_tuple_neighbor))]
+          all_neighbors_local.append([int(node), int(s)])
+          # set_graph.add_edge(int(node),int(s),label='local')) #not necessary
+        
+        
+        for global_neighbor in neighbors_global[i]: 
+          # global_tuple_neighbor = tup[:mult_position]+tuple([global_neighbor])+tup[mult_position+1:]
+          list_item = list(tup)
+          list_item[mult_position] = global_neighbor
+          global_tuple_neighbor = tuple(list_item)
+          s = multiset_to_nodes[tuple(sorted(global_tuple_neighbor))]
+          all_neighbors_global.append([int(node), int(s)])
+          # set_graph.add_edge(int(node),int(s),label='global')) #not necessary
             
     # Convert back to pytorch geometric data format
     data_new = Data()
 
-    edge_index = torch.tensor(all_neighbors).t().contiguous()
+    edge_index_local = torch.tensor(all_neighbors_local).t().contiguous()
+    data_new.edge_index_local = edge_index_local
 
-    data_new.edge_index = edge_index
+    edge_index_global = torch.tensor(all_neighbors_global).t().contiguous()
+    data_new.edge_index_global = edge_index_global
 
     node_attrs = nx.get_node_attributes(multiset_graph, 'attr')
     node_features = np.array(list(node_attrs.values()))
