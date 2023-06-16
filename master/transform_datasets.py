@@ -324,17 +324,6 @@ def multiset_2_3_local_nonlocal_transformer(dataset,k,variant='local',star_varia
 
       multiset_graph.add_node(ind,attr=mapping_dict[node_attr])
 
-    for ind,Set in enumerate(list(itertools.combinations(graph.nodes, k))):
-      sorted_set = sorted(Set)
-      multiset_to_nodes[tuple(sorted_set)] = ind
-      nodes_to_multiset[ind] = tuple(sorted_set)
-      node_attr =  assign_attr(Set,graph)
-
-      if node_attr not in mapping_dict.keys():
-        mapping_dict[node_attr] = len(mapping_dict) #np.array([len(mapping_dict)])
-
-      multiset_graph.add_node(ind,attr=mapping_dict[node_attr])
-
     # Add edges to each set_graph
 
     # neighbors = {key: [] for key in range(k)} we dont have k distict elements 
@@ -368,7 +357,7 @@ def multiset_2_3_local_nonlocal_transformer(dataset,k,variant='local',star_varia
           tuple_neighbor = tuple(list_item)
           s = multiset_to_nodes[tuple(sorted(tuple_neighbor))]
           all_neighbors.append([int(node), int(s)])
-          # set_graph.add_edge(int(node),int(s)) #not necessary
+          # multiset_graph.add_edge(int(node),int(s)) #not necessary
             
     # Convert back to pytorch geometric data format
     data_new = Data()
@@ -449,17 +438,6 @@ def multiset_2_3_delta_transformer(dataset,k):
       multiset_to_nodes[tuple(sorted_multiset)] = ind
       nodes_to_multiset[ind] = tuple(sorted_multiset)
       node_attr =  assign_attr(multiset,graph)
-
-      if node_attr not in mapping_dict.keys():
-        mapping_dict[node_attr] = len(mapping_dict) #np.array([len(mapping_dict)])
-
-      multiset_graph.add_node(ind,attr=mapping_dict[node_attr])
-
-    for ind,Set in enumerate(list(itertools.combinations(graph.nodes, k))):
-      sorted_set = sorted(Set)
-      multiset_to_nodes[tuple(sorted_set)] = ind
-      nodes_to_multiset[ind] = tuple(sorted_set)
-      node_attr =  assign_attr(Set,graph)
 
       if node_attr not in mapping_dict.keys():
         mapping_dict[node_attr] = len(mapping_dict) #np.array([len(mapping_dict)])
