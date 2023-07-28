@@ -16,8 +16,5 @@ This repository contains a collection of scripts for performing graph classifica
 
 6. `example_run.py`: A short example that automatically splits a given (transformed) dataset, train and test a $\delta$-2-WL{{ }}-GNN  for a given number of hidden units, epochs.
 
-## Getting Started
 
-To use these scripts, follow these steps:
-
-1. Install the required dependencies mentioned in the `requirements.txt` file.
+To use these scripts you need to install the required dependencies mentioned in the `requirements.txt` file.
