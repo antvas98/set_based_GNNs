@@ -11,7 +11,7 @@ This repository contains a collection of scripts for performing graph classifica
 3. `GNN_architectures.py`: This file implements GNN architectures for graph classification tasks. It takes the transformed datasets as input and predicts the class of each graph. There are different architectures in this file. The GINconv_one_aggregator_Net which can be applied for local (only local neighbors) and non-local (no discrimination between local and non-local neighbors) set and multisets models, the GINconv_two_aggregators_Net which should be applied for delta variants of sets and multisets architectures (discrimination between local and non local neighbors) and the gin_tuple2_Net and gin_tuple3_Net which should be applied for tuple based architectures described [here](https://arxiv.org/abs/1904.01543) (Similarly for the gcn architectures)
 
 4. `GNN_architectures.py`: This file consist of all WL algorithm variants discussed in the thesis for tackling the Graph Isomorphism problem.
-
+ 
 5. `hyperparameter_selection.py`: This file splits a dataset into a training and validation set and performs hyperparameter selection based on the validation set. It explores different combinations of hyperparameters to find the optimal settings for a GNN model and a specific dataset selection.
 
 6. `cross_validation_metric.py`: This file implements cross-validation for a given number of folds (default is 10). It performs the hyperparameter selection process from step 4 within each fold to evaluate the model's performance in 10 different test sets.
