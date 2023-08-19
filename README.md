@@ -14,9 +14,11 @@ This repository contains a collection of scripts for performing graph classifica
  
 5. `hyperparameter_selection.py`: This file splits a dataset into a training and validation set and performs hyperparameter selection based on the validation set. It explores different combinations of hyperparameters to find the optimal settings for a GNN model and a specific dataset selection.
 
-6. `cross_validation_metric.py`: This file implements cross-validation for a given number of folds (default is 10). It performs the hyperparameter selection process from step 4 within each fold to evaluate the model's performance in 10 different test sets.
+6. `CFI_constructions.py`: This file computes the CFI graphs for a given k.
 
-7. `example_run.py`: A short example that automatically splits a given (transformed) dataset, train and test a $\delta$-2-WL{{ }}-GNN  for a given number of hidden units, epochs.
+7. `cross_validation_metric.py`: This file implements cross-validation for a given number of folds (default is 10). It performs the hyperparameter selection process from step 4 within each fold to evaluate the model's performance in 10 different test sets.
+
+8. `example_run.py`: A short example that automatically splits a given (transformed) dataset, train and test a $\delta$-2-WL{{ }}-GNN  for a given number of hidden units, epochs.
 
 
 To use these scripts you need to install the required dependencies mentioned in the `requirements.txt` file.
